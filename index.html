@@ -133,6 +133,131 @@ End with one of these:
           </div>
 
           <div class="mb-3">
+            <label for="judge-feedback-prompt" class="form-label">LLM Judge Feedback Prompt</label>
+            <textarea class="form-control" name="judge-feedback-prompt" id="judge-feedback-prompt" rows="2">You evaluated feedback from a clinical trial based on your criteria. Both are below.
+The user is a model that has done the same with simpler criteria. Give feedback to the model. But DO NOT reveal your evaluation criteria.</textarea>
+          </div>
+
+          <div class="mb-3">
+            <label for="revision-prompt" class="form-label">Model Revision Prompt</label>
+            <textarea class="form-control" name="revision-prompt" id="revision-prompt" rows="2">Here is feedback from a clinical expert. Revise your analysis to incorporate the feedback.</textarea>
+          </div>
+
+          <div class="mb-3">
+            <label for="summary-prompt" class="form-label">Summary Prompt</label>
+            <textarea class="form-control" name="summary-prompt" id="summary-prompt" rows="2">A subject has provided feedback for a clinical trail.
+The evaluation from 3 models are below.
+Generate a Pharmacovigilance Assessment Summary as JSON in the provided schema.</textarea>
+          </div>
+
+          <div class="mb-3">
+            <label for="summary-schema" class="form-label">Summary Schema</label>
+            <textarea class="form-control font-monospace" name="summary-schema" id="summary-schema" rows="5">{
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["VALID CASE", "INVALID CASE", "PENDING REVIEW", "CLOSED"]
+    },
+    "causality": {
+      "type": "string",
+      "enum": ["Certain", "Probable", "Possible", "Unlikely", "Conditional", "Unassessable", "Unrelated"]
+    },
+    "seriousness": {
+      "type": "string",
+      "enum": ["Serious", "Non-Serious", "Life-threatening", "Hospitalization required", "Disability", "Congenital anomaly", "Death"]
+    },
+    "expectedness": {
+      "type": "string",
+      "enum": ["Listed", "Unlisted", "Unknown", "Unexpected"]
+    },
+
+    "primary_event": {
+      "type": "string",
+      "description": "The main adverse event category. Examples include 'Gastrointestinal Disorder', 'Cardiac Event', 'Skin Reaction', 'Neurological Disorder', etc."
+    },
+    "meddra_pt": {
+      "type": "string",
+      "description": "The MedDRA (Medical Dictionary for Regulatory Activities) preferred term code for the primary event. Typically a numeric identifier, e.g., '10000060' for 'Gastrointestinal Disorder'."
+    },
+    "case_completeness": {
+      "type": "string",
+      "enum": ["Perfectly documented (5/5)", "Well-documented (4/5)", "Moderate documentation (3/5)", "Low documentation quality (2/5)", "Poorly documented (1/5)"]
+    },
+
+    "report_type": {
+      "type": "string",
+      "enum": ["Expedited (15-day)", "Periodic", "Annual", "Initial report", "Follow-up report", "None required"]
+    },
+    "pbrer_inclusion": {
+      "type": "string",
+      "enum": ["Required", "Not Required", "Optional", "Pending review"]
+    },
+    "signal_status": {
+      "type": "string",
+      "enum": ["Under Monitoring", "Not Under Monitoring", "Signal Closed", "New Signal Detected", "Further Investigation Required"]
+    },
+
+    "expedited_report": {
+      "type": "string",
+      "enum": ["Submit within 15 days", "Submit within 7 days", "Submit within 30 days", "No expedited report required", "Submission required upon request"]
+    },
+    "include_in_pbrer_psur": {
+      "type": "string",
+      "enum": ["Include", "Do not include", "Review for inclusion", "Include if recurring"]
+    },
+    "update_safety_database": {
+      "type": "string",
+      "enum": ["Yes", "No", "Pending approval", "Already updated"]
+    },
+    "update_signal_detection_database": {
+      "type": "string",
+      "enum": ["Yes", "No", "Pending review", "Already updated"]
+    },
+
+    "ror_score": {
+      "type": "number",
+      "description": "Rate of Reporting Odds Ratio (ROR) score for the signal, usually numeric. Example values include '2.5', '1.0', etc."
+    },
+    "ror_status": {
+      "type": "string",
+      "enum": ["Above threshold", "Below threshold", "At threshold"]
+    },
+    "cases_in_database": {
+      "type": "integer",
+      "description": "Number of similar cases in the database. Examples: 15, 50, 100."
+    },
+    "labeling_status": {
+      "type": "string",
+      "enum": ["No update needed", "Update recommended", "Update required", "Pending further data"]
+    }
+  },
+  "required": [
+    "status",
+    "causality",
+    "seriousness",
+    "expectedness",
+    "primary_event",
+    "meddra_pt",
+    "case_completeness",
+    "report_type",
+    "pbrer_inclusion",
+    "signal_status",
+    "expedited_report",
+    "include_in_pbrer_psur",
+    "update_safety_database",
+    "update_signal_detection_database",
+    "ror_score",
+    "ror_status",
+    "cases_in_database",
+    "labeling_status"
+  ],
+  "additionalProperties": false
+}
+</textarea>
+          </div>
+
+          <div class="mb-3">
             <label for="judge-model" class="form-label">LLM Judge Model</label>
             <select class="form-select models" name="judge-model" id="judge-model"></select>
           </div>

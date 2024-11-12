@@ -13,9 +13,10 @@ const $clinicalDescription = document.getElementById("clinical-description");
 const $results = document.getElementById("results");
 
 const marked = new Marked();
+const results = {};
 
 // ------------------------------------------------------------------------------------------------
-// Models
+// Model configuration. These are the models that are available to use.
 const models = [
   { source: "openai", model: "gpt-4o-mini", name: "OpenAI: GPT 4o Mini ($0.15)" },
   { source: "openai", model: "gpt-4o-audio-preview", name: "OpenAI: GPT 4o Audio Preview ($2.5)" },
@@ -35,9 +36,17 @@ const models = [
   { source: "groq", model: "mixtral-8x7b-32768", name: "Groq: Mixtral 8x7b ($0)" },
 ];
 
+// Apply the models to the form
+$form.querySelectorAll("select.models").forEach((el) => {
+  el.innerHTML = models.map((m, index) => `<option value="${index}">${m.name}</option>`).join("");
+});
+
+// ------------------------------------------------------------------------------------------------
+// Source configurations. This is how we connect to the LLM provider.
+const openai = (d) => d;
 const sources = {
   openai: {
-    adapter: (d) => d,
+    adapter: openai,
     url: () => "https://llmfoundry.straive.com/openai/v1/chat/completions",
   },
   anthropic: {
@@ -49,19 +58,14 @@ const sources = {
     url: (model) => `https://llmfoundry.straive.com/gemini/v1beta/models/${model}:streamGenerateContent?alt=sse`,
   },
   cerebras: {
-    adapter: (d) => d,
+    adapter: openai,
     url: () => "https://llmfoundry.straive.com/cerebras/v1/chat/completions",
   },
   groq: {
-    adapter: (d) => d,
+    adapter: openai,
     url: () => "https://llmfoundry.straive.com/groq/v1/chat/completions",
   },
 };
-
-// Apply the models to the form
-$form.querySelectorAll("select.models").forEach((el) => {
-  el.innerHTML = models.map((m, index) => `<option value="${index}">${m.name}</option>`).join("");
-});
 
 // ------------------------------------------------------------------------------------------------
 // Clinical trial description samples
@@ -90,35 +94,166 @@ $form.addEventListener("change", (event) => {
 });
 
 // ------------------------------------------------------------------------------------------------
-// Loop through all the .eval elements and get the prompts and models
+// Workflow. These are the sequence of LLM calls that we make.
+
+const workflow = [
+  {
+    title: "Context Analysis",
+    data: () => ({
+      modelNumber: +$form.querySelector("#basic-model").value,
+      messages: [
+        { role: "system", content: $form.querySelector("#basic-prompt").value },
+        { role: "user", content: $clinicalDescription.value },
+      ],
+    }),
+  },
+  {
+    title: "BioClin Analysis",
+    data: () => ({
+      modelNumber: +$form.querySelector("#intermediate-model").value,
+      messages: [
+        { role: "system", content: $form.querySelector("#intermediate-prompt").value },
+        { role: "user", content: $clinicalDescription.value },
+      ],
+    }),
+  },
+  {
+    title: "LLM as a Judge Analysis",
+    data: () => ({
+      modelNumber: +$form.querySelector("#judge-model").value,
+      messages: [
+        { role: "system", content: $form.querySelector("#judge-prompt").value },
+        { role: "user", content: $clinicalDescription.value },
+      ],
+    }),
+  },
+  {
+    title: "Judge feedback to Context Analysis",
+    data: () => ({
+      modelNumber: +$form.querySelector("#judge-model").value,
+      messages: [
+        { role: "system", content: judgeFeedbackPrompt() },
+        { role: "user", content: results["Context Analysis"] },
+      ],
+    }),
+  },
+  {
+    title: "Judge feedback to BioClin Analysis",
+    data: () => ({
+      modelNumber: +$form.querySelector("#judge-model").value,
+      messages: [
+        { role: "system", content: judgeFeedbackPrompt() },
+        { role: "user", content: results["BioClin Analysis"] },
+      ],
+    }),
+  },
+  {
+    title: "Context Analysis - Revised",
+    data: () => ({
+      modelNumber: +$form.querySelector("#basic-model").value,
+      messages: [
+        { role: "system", content: $form.querySelector("#basic-prompt").value },
+        { role: "user", content: $clinicalDescription.value },
+        { role: "assistant", content: results["Context Analysis"] },
+        { role: "user", content: revisionPrompt("Judge feedback to Context Analysis") },
+      ],
+    }),
+  },
+  {
+    title: "BioClin Analysis - Revised",
+    data: () => ({
+      modelNumber: +$form.querySelector("#intermediate-model").value,
+      messages: [
+        { role: "system", content: $form.querySelector("#intermediate-prompt").value },
+        { role: "user", content: $clinicalDescription.value },
+        { role: "assistant", content: results["BioClin Analysis"] },
+        { role: "user", content: revisionPrompt("Judge feedback to BioClin Analysis") },
+      ],
+    }),
+  },
+  {
+    title: "Judge Summary",
+    data: () => ({
+      modelNumber: +$form.querySelector("#judge-model").value,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "summary",
+          schema: JSON.parse($form.querySelector("#summary-schema").value),
+        },
+      },
+      messages: [
+        {
+          role: "system",
+          content: `${$form.querySelector("#summary-prompt").value}
+
+# Model 1 Analysis
+
+${results["Context Analysis - Revised"]}
+
+# Model 2 Analysis
+
+${results["BioClin Analysis - Revised"]}
+
+# Model 3 Analysis
+
+${results["LLM as a Judge Analysis"]}
+`,
+        },
+        { role: "user", content: results["LLM as a Judge Analysis"] },
+      ],
+    }),
+  },
+];
+
+const judgeFeedbackPrompt = () => `${$form.querySelector("#judge-feedback-prompt").value}
+
+# ORIGINAL TEXT
+
+${$clinicalDescription.value}
+
+# YOUR ANALYSIS
+
+${results["LLM as a Judge Analysis"]}
+
+# OTHER MODEL'S ANALYSIS`;
+
+const revisionPrompt = (key) => `${$form.querySelector("#revision-prompt").value}
+
+# Feedback
+
+${results[key]}`;
+
+// ------------------------------------------------------------------------------------------------
+// Loop through the workflow, execute it and render it.
 $form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const results = {};
-  for (const $eval of $form.querySelectorAll(".eval")) {
-    const system = $eval.querySelector("textarea").value;
-    const { model, source } = models[$eval.querySelector("select").value];
-    const id = $eval.querySelector("select").id.split("-")[0];
-    const text = $clinicalDescription.value;
+  // Clear results
+  for (const key in results) delete results[key];
+  // Run the workflow
+  for (const { title, data } of workflow) {
+    const { modelNumber, ...args } = data();
+    const { model, source } = models[modelNumber];
     const { adapter, url } = sources[source];
     const headers = { "Content-Type": "application/json" };
-    const messages = [
-      { role: "system", content: system },
-      { role: "user", content: text },
-    ];
-    const body = adapter({ model, messages, stream: true });
+    const body = adapter({ model, ...args, stream: true });
     const params = { method: "POST", credentials: "include", headers, body: JSON.stringify(body) };
     draw(results, { loading: true });
-    for await (const { content, message } of asyncLLM(url(model), params)) {
-      results[id] = content;
+    for await (const { error, content } of asyncLLM(url(model), params)) {
+      if (error) results[title] = `ERROR: ${error}`;
+      else results[title] = content;
       draw(results, { loading: true });
 
       // Slow down the rendering
       // await new Promise((resolve) => setTimeout(resolve, 5));
     }
     draw(results, { loading: false });
+    console.log(results);
   }
 });
 
+// ------------------------------------------------------------------------------------------------
+// Render the results
 let lastCalledTime;
 const draw = (results, { loading } = { loading: false }) => {
   // Throttle to 100ms unless loading is done
@@ -126,24 +261,17 @@ const draw = (results, { loading } = { loading: false }) => {
   if (loading && now - lastCalledTime < 100) return;
   lastCalledTime = now;
 
-  // Draw the results
-  const analysisTypes = [
-    { key: "basic", title: "Basic Analysis" },
-    { key: "intermediate", title: "Intermediate Analysis" },
-    { key: "judge", title: "LLM as a Judge Analysis" },
-  ];
-
-  const contents = analysisTypes
-    .filter(({ key }) => results[key])
+  const contents = workflow
+    .filter(({ title }) => results[title])
     .map(
-      ({ key, title }) => html`
+      ({ title }) => html`
         <div class="card mb-3">
           <div class="card-body">
             <h5 class="card-title text-secondary mb-3">
               <span class="rounded-circle text-bg-primary p-2 me-2 d-inline-flex"><i class="bi bi-chat-text"></i></span>
               ${title}
             </h5>
-            ${unsafeHTML(marked.parse(results[key]))}
+            ${unsafeHTML(marked.parse(results[title]))}
           </div>
         </div>
       `
