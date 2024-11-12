@@ -42,8 +42,33 @@
     <h1 class="display-1 my-4 text-center">Adverse Events</h1>
     <h2 class="display-6 text-center">How can we explainably identify adverse events?</h2>
     <div class="mx-auto my-3 narrative">
-      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. </p>
+      <p>This application uses LLMs to identify whether user feedback from a clinical trial is an adverse event or not.</p>
+      <p>It uses a workflow with multiple steps, where each step utilizes different models to evaluate the text for potential adverse events. Finally, it summarizes the results in a Pharmacovigilance assessment summary.</p>
+      <p>Here's a breakdown of the workflow:</p>
+
+      <ol>
+        <li><strong>Context Analysis</strong>: The basic model analyzes the clinical description to determine if there is any mention of an adverse event.</li>
+        <li><strong>BioClin Analysis</strong>: An intermediate model performs a more detailed evaluation, considering clinical reasoning to assess the presence of adverse reactions.</li>
+        <li><strong>LLM as a Judge Analysis</strong>: A specialized model acts as a judge, evaluating the feedback from the previous analyses based on predefined criteria.</li>
+        <li><strong>Judge Feedback to Context Analysis</strong>: The judge provides feedback on the context analysis, which is then used to refine the initial evaluation.</li>
+        <li><strong>Judge Feedback to BioClin Analysis</strong>: Similar to the previous step, the judge reviews the bio-clinical analysis and offers feedback for improvement.</li>
+        <li><strong>Context Analysis - Revised</strong>: The basic model re-evaluates the clinical description, incorporating the judge's feedback to enhance its analysis.</li>
+        <li><strong>BioClin Analysis - Revised</strong>: The intermediate model revisits its analysis, integrating the judge's feedback for a more accurate assessment.</li>
+        <li><strong>Judge Summary</strong>: Finally, the judge summarizes the findings from all analyses, generating a comprehensive report that includes a pharmacovigilance assessment summary in JSON format.</li>
+      </ol>
     </div>
+    <pre class="mermaid container-fluid mb-5">
+flowchart LR
+  A[Context Analysis] --> C[LLM as a Judge Analysis]
+  B[BioClin Analysis] --> C
+  C --> D[Judge Feedback to Context Analysis]
+  C --> E[Judge Feedback to BioClin Analysis]
+  D --> F[Context Analysis - Revised]
+  E --> G[BioClin Analysis - Revised]
+  F --> H[Judge Summary]
+  G --> H
+  C --> H
+    </pre>
 
     <form id="adverse-event-form" class="container my-4">
       <div class="mb-3">

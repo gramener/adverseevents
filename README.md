@@ -2,6 +2,39 @@
 
 An AI-powered tool to analyze clinical trial descriptions and identify potential adverse events using multiple LLM models.
 
+## Overview
+
+This application uses LLMs to identify whether user feedback from a clinical trial is an adverse event or not.
+
+It uses a workflow with multiple steps, where each step utilizes different models to evaluate the text for potential adverse events. Finally, it summarizes the results in a Pharmacovigilance assessment summary.
+
+Here's a breakdown of the workflow:
+
+1. **Context Analysis**: The basic model analyzes the clinical description to determine if there is any mention of an adverse event.
+2. **BioClin Analysis**: An intermediate model performs a more detailed evaluation, considering clinical reasoning to assess the presence of adverse reactions.
+3. **LLM as a Judge Analysis**: A specialized model acts as a judge, evaluating the feedback from the previous analyses based on predefined criteria.
+4. **Judge Feedback to Context Analysis**: The judge provides feedback on the context analysis, which is then used to refine the initial evaluation.
+5. **Judge Feedback to BioClin Analysis**: Similar to the previous step, the judge reviews the bio-clinical analysis and offers feedback for improvement.
+6. **Context Analysis - Revised**: The basic model re-evaluates the clinical description, incorporating the judge's feedback to enhance its analysis.
+7. **BioClin Analysis - Revised**: The intermediate model revisits its analysis, integrating the judge's feedback for a more accurate assessment.
+8. **Judge Summary**: Finally, the judge summarizes the findings from all analyses, generating a comprehensive report that includes a pharmacovigilance assessment summary in JSON format.
+
+This structured approach ensures a thorough evaluation of the clinical trial description, leveraging multiple models to enhance accuracy and reliability in identifying adverse events.
+
+```mermaid
+flowchart TD
+    A[Context Analysis] --> B[BioClin Analysis]
+    B --> C[LLM as a Judge Analysis]
+    C --> D[Judge Feedback to Context Analysis]
+    C --> E[Judge Feedback to BioClin Analysis]
+    D --> F[Context Analysis - Revised]
+    E --> G[BioClin Analysis - Revised]
+    F --> H[Judge Summary]
+    G --> H
+```
+
+This structured approach ensures a thorough evaluation of the clinical trial description, leveraging multiple models to enhance accuracy and reliability in identifying adverse events.
+
 ## Features
 
 - Multi-model analysis using various LLMs (OpenAI, Anthropic, Google, Cerebras, Groq)

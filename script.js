@@ -4,6 +4,7 @@ import { html, render } from "https://cdn.jsdelivr.net/npm/lit-html@3/+esm";
 import { unsafeHTML } from "https://cdn.jsdelivr.net/npm/lit-html@3/directives/unsafe-html.js";
 import { parse } from "https://cdn.jsdelivr.net/npm/partial-json@0.1.7/+esm";
 import { Marked } from "https://cdn.jsdelivr.net/npm/marked@13/+esm";
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
 import { asyncLLM } from "https://cdn.jsdelivr.net/npm/asyncllm@2";
 import { anthropic } from "https://cdn.jsdelivr.net/npm/asyncllm@2/dist/anthropic.js";
 import { gemini } from "https://cdn.jsdelivr.net/npm/asyncllm@2/dist/gemini.js";
@@ -15,6 +16,11 @@ const $results = document.getElementById("results");
 
 const marked = new Marked();
 const results = {};
+
+// ------------------------------------------------------------------------------------------------
+// Initialize external libraries
+mermaid.initialize({ startOnLoad: true });
+FormPersistence.persist($form);
 
 // ------------------------------------------------------------------------------------------------
 // Model configuration. These are the models that are available to use.
@@ -350,6 +356,3 @@ const drawSummary = (summary) => html`
     </div>
   </div>
 `;
-
-// ------------------------------------------------------------------------------------------------
-FormPersistence.persist($form);
