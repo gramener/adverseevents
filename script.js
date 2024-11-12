@@ -2,6 +2,7 @@
 
 import { html, render } from "https://cdn.jsdelivr.net/npm/lit-html@3/+esm";
 import { unsafeHTML } from "https://cdn.jsdelivr.net/npm/lit-html@3/directives/unsafe-html.js";
+import { parse } from "https://cdn.jsdelivr.net/npm/partial-json@0.1.7/+esm";
 import { Marked } from "https://cdn.jsdelivr.net/npm/marked@13/+esm";
 import { asyncLLM } from "https://cdn.jsdelivr.net/npm/asyncllm@2";
 import { anthropic } from "https://cdn.jsdelivr.net/npm/asyncllm@2/dist/anthropic.js";
@@ -241,14 +242,14 @@ $form.addEventListener("submit", async (event) => {
     draw(results, { loading: true });
     for await (const { error, content } of asyncLLM(url(model), params)) {
       if (error) results[title] = `ERROR: ${error}`;
-      else results[title] = content;
+      // If the response format is JSON, parse it
+      else results[title] = args.response_format ? parse(content || "{}") : content;
       draw(results, { loading: true });
 
       // Slow down the rendering
       // await new Promise((resolve) => setTimeout(resolve, 5));
     }
     draw(results, { loading: false });
-    console.log(results);
   }
 });
 
@@ -263,26 +264,92 @@ const draw = (results, { loading } = { loading: false }) => {
 
   const contents = workflow
     .filter(({ title }) => results[title])
-    .map(
-      ({ title }) => html`
-        <div class="card mb-3">
-          <div class="card-body">
-            <h5 class="card-title text-secondary mb-3">
-              <span class="rounded-circle text-bg-primary p-2 me-2 d-inline-flex"><i class="bi bi-chat-text"></i></span>
-              ${title}
-            </h5>
-            ${unsafeHTML(marked.parse(results[title]))}
-          </div>
-        </div>
-      `
+    .map(({ title }) =>
+      typeof results[title] == "object"
+        ? drawSummary(results[title])
+        : html`
+            <div class="card mb-3 narrative mx-auto my-4">
+              <div class="card-body">
+                <h5 class="card-title text-secondary mb-3">
+                  <span class="rounded-circle text-bg-primary p-2 me-2 d-inline-flex"
+                    ><i class="bi bi-chat-text"></i
+                  ></span>
+                  ${title}
+                </h5>
+                ${unsafeHTML(marked.parse(results[title]))}
+              </div>
+            </div>
+          `
     );
 
   if (loading)
     contents.push(
-      html`<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>`
+      html`<div class="text-center">
+        <div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>
+      </div>`
     );
   render(contents, $results);
 };
+
+const drawSummary = (summary) => html`
+  <div class="container">
+    <h2 class="text-center my-4">Pharmacovigilance Assessment Summary</h2>
+    <div class="row">
+      <div class="col-md-6">
+        <h5>Case Assessment</h5>
+        <ul class="list-group">
+          <li class="list-group-item">Status: <strong>${summary.status}</strong></li>
+          <li class="list-group-item">Causality: <strong>${summary.causality}</strong></li>
+          <li class="list-group-item">Seriousness: <strong>${summary.seriousness}</strong></li>
+          <li class="list-group-item">Expectedness: <strong>${summary.expectedness}</strong></li>
+        </ul>
+      </div>
+      <div class="col-md-6">
+        <h5>Case Classification</h5>
+        <ul class="list-group">
+          <li class="list-group-item">Primary Event: <strong>${summary.primary_event}</strong></li>
+          <li class="list-group-item">MedDRA PT: <strong>${summary.meddra_pt}</strong></li>
+          <li class="list-group-item">Case Completeness: <strong>${summary.case_completeness}</strong></li>
+        </ul>
+      </div>
+    </div>
+    <div class="row mt-3">
+      <div class="col-md-6">
+        <h5>Regulatory Impact</h5>
+        <ul class="list-group">
+          <li class="list-group-item">Report Type: <strong>${summary.report_type}</strong></li>
+          <li class="list-group-item">PBRER Inclusion: <strong>${summary.pbrer_inclusion}</strong></li>
+          <li class="list-group-item">Signal Status: <strong>${summary.signal_status}</strong></li>
+        </ul>
+      </div>
+      <div class="col-md-6">
+        <h5>Required Actions</h5>
+        <ul class="list-group">
+          <li class="list-group-item">Expedited Report: <strong>${summary.expedited_report}</strong></li>
+          <li class="list-group-item">
+            Include in upcoming PBRER/PSUR: <strong>${summary.include_in_pbrer_psur}</strong>
+          </li>
+          <li class="list-group-item">Update Safety Database: <strong>${summary.update_safety_database}</strong></li>
+          <li class="list-group-item">
+            Update Signal Detection Database: <strong>${summary.update_signal_detection_database}</strong>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="row mt-3">
+      <div class="col-md-6">
+        <h5>Signal Analysis</h5>
+        <ul class="list-group">
+          <li class="list-group-item">ROR Score: <strong>${summary.ror_score} (${summary.ror_status})</strong></li>
+          <li class="list-group-item">
+            Cases in Database: <strong>${summary.cases_in_database} similar reports</strong>
+          </li>
+          <li class="list-group-item">Labeling Status: <strong>${summary.labeling_status}</strong></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+`;
 
 // ------------------------------------------------------------------------------------------------
 FormPersistence.persist($form);
