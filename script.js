@@ -10,8 +10,10 @@ import { anthropic } from "https://cdn.jsdelivr.net/npm/asyncllm@2/dist/anthropi
 import { gemini } from "https://cdn.jsdelivr.net/npm/asyncllm@2/dist/gemini.js";
 
 const $form = document.getElementById("adverse-event-form");
+const $analyze = document.getElementById("analyze");
 const $samples = document.getElementById("samples");
 const $clinicalDescription = document.getElementById("clinical-description");
+const $slowRendering = document.getElementById("slow-rendering");
 const $results = document.getElementById("results");
 
 const marked = new Marked();
@@ -21,6 +23,17 @@ const results = {};
 // Initialize external libraries
 mermaid.initialize({ startOnLoad: true });
 FormPersistence.persist($form);
+
+// ------------------------------------------------------------------------------------------------
+// Log into LLM Foundry
+const { token } = await fetch("https://llmfoundry.straive.com/token", { credentials: "include" }).then((res) =>
+  res.json()
+);
+$analyze.classList.remove("d-none");
+if (!token) {
+  const url = "https://llmfoundry.straive.com/login?" + new URLSearchParams({ next: location.href });
+  $analyze.innerHTML = /* html */ `<a class="btn btn-primary" href="${url}">Log into LLM Foundry</a>`;
+}
 
 // ------------------------------------------------------------------------------------------------
 // Model configuration. These are the models that are available to use.
@@ -106,6 +119,7 @@ $form.addEventListener("change", (event) => {
 const workflow = [
   {
     title: "Context Analysis",
+    card: "basic",
     data: () => ({
       modelNumber: +$form.querySelector("#basic-model").value,
       messages: [
@@ -116,6 +130,7 @@ const workflow = [
   },
   {
     title: "BioClin Analysis",
+    card: "intermediate",
     data: () => ({
       modelNumber: +$form.querySelector("#intermediate-model").value,
       messages: [
@@ -126,6 +141,7 @@ const workflow = [
   },
   {
     title: "LLM as a Judge Analysis",
+    card: "judge",
     data: () => ({
       modelNumber: +$form.querySelector("#judge-model").value,
       messages: [
@@ -136,6 +152,7 @@ const workflow = [
   },
   {
     title: "Judge feedback to Context Analysis",
+    card: "judge",
     data: () => ({
       modelNumber: +$form.querySelector("#judge-model").value,
       messages: [
@@ -146,6 +163,7 @@ const workflow = [
   },
   {
     title: "Judge feedback to BioClin Analysis",
+    card: "judge",
     data: () => ({
       modelNumber: +$form.querySelector("#judge-model").value,
       messages: [
@@ -156,6 +174,7 @@ const workflow = [
   },
   {
     title: "Context Analysis - Revised",
+    card: "basic",
     data: () => ({
       modelNumber: +$form.querySelector("#basic-model").value,
       messages: [
@@ -168,6 +187,7 @@ const workflow = [
   },
   {
     title: "BioClin Analysis - Revised",
+    card: "intermediate",
     data: () => ({
       modelNumber: +$form.querySelector("#intermediate-model").value,
       messages: [
@@ -180,6 +200,7 @@ const workflow = [
   },
   {
     title: "Judge Summary",
+    card: "summary",
     data: () => ({
       modelNumber: +$form.querySelector("#judge-model").value,
       response_format: {
@@ -251,12 +272,11 @@ $form.addEventListener("submit", async (event) => {
       // If the response format is JSON, parse it
       else results[title] = args.response_format ? parse(content || "{}") : content;
       draw(results, { loading: true });
-
-      // Slow down the rendering
-      // await new Promise((resolve) => setTimeout(resolve, 5));
+      // Slow down the rendering if required.
+      if ($slowRendering.checked) await new Promise((resolve) => setTimeout(resolve, 5));
     }
-    draw(results, { loading: false });
   }
+  draw(results, { loading: false });
 });
 
 // ------------------------------------------------------------------------------------------------
@@ -268,90 +288,136 @@ const draw = (results, { loading } = { loading: false }) => {
   if (loading && now - lastCalledTime < 100) return;
   lastCalledTime = now;
 
-  const contents = workflow
-    .filter(({ title }) => results[title])
-    .map(({ title }) =>
-      typeof results[title] == "object"
-        ? drawSummary(results[title])
-        : html`
-            <div class="card mb-3 narrative mx-auto my-4">
-              <div class="card-body">
-                <h5 class="card-title text-secondary mb-3">
-                  <span class="rounded-circle text-bg-primary p-2 me-2 d-inline-flex"
-                    ><i class="bi bi-chat-text"></i
-                  ></span>
-                  ${title}
-                </h5>
-                ${unsafeHTML(marked.parse(results[title]))}
-              </div>
+  const buckets = { basic: [], intermediate: [], judge: [], summary: [] };
+  for (const { title, card } of workflow) {
+    if (!results[title]) continue;
+    if (typeof results[title] == "object") buckets.summary.push(drawSummary(results[title]));
+    else
+      buckets[card].push(html`
+        <div class="list-group-item text-bg-secondary">${title}</div>
+        <div class="list-group-item">${unsafeHTML(marked.parse(results[title]))}</div>
+      `);
+  }
+  const contents = html`
+    <div class="container-fluid">
+      <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+        <div class="col">
+          <div class="card">
+            <h5 class="card-header text-bg-primary"><i class="bi bi-chat-text"></i> Contextual LLM</h5>
+            <div class="list-group list-group-flush overflow-auto custom-scrollbar" style="max-height: 50vh">
+              ${buckets.basic}
             </div>
-          `
-    );
-
-  if (loading)
-    contents.push(
-      html`<div class="text-center">
-        <div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>
-      </div>`
-    );
+          </div>
+        </div>
+        <div class="col">
+          <div class="card">
+            <h5 class="card-header text-bg-primary"><i class="bi bi-shield-check"></i> Judge LLM</h5>
+            <div class="list-group list-group-flush overflow-auto custom-scrollbar" style="max-height: 50vh">
+              ${buckets.judge}
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card">
+            <h5 class="card-header text-bg-primary"><i class="bi bi-clipboard2-pulse"></i> BioClin LLM</h5>
+            <div class="list-group list-group-flush overflow-auto custom-scrollbar" style="max-height: 50vh">
+              ${buckets.intermediate}
+            </div>
+          </div>
+        </div>
+      </div>
+      ${buckets.summary}
+      ${loading
+        ? html`<div class="text-center">
+            <div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>
+          </div>`
+        : null}
+    </div>
+  `;
   render(contents, $results);
+  // Ensure that all 3 columns have scrolled to the bottom
+  for (const $col of $results.querySelectorAll(".col .overflow-auto")) $col.scrollTop = $col.scrollHeight;
+  $results.scrollIntoView({ behavior: "smooth", block: "end" });
 };
 
 const drawSummary = (summary) => html`
+  <hr class="my-5" />
   <div class="container">
-    <h2 class="text-center my-4">Pharmacovigilance Assessment Summary</h2>
-    <div class="row">
-      <div class="col-md-6">
-        <h5>Case Assessment</h5>
-        <ul class="list-group">
-          <li class="list-group-item">Status: <strong>${summary.status}</strong></li>
-          <li class="list-group-item">Causality: <strong>${summary.causality}</strong></li>
-          <li class="list-group-item">Seriousness: <strong>${summary.seriousness}</strong></li>
-          <li class="list-group-item">Expectedness: <strong>${summary.expectedness}</strong></li>
-        </ul>
+    <h2 class="text-center mb-4">Pharmacovigilance Assessment Summary</h2>
+    <div class="row g-3">
+      <!-- Case Assessment -->
+      <div class="col-md-4">
+        <div class="card h-100">
+          <div class="card-header text-bg-primary">Case Assessment</div>
+          <div class="card-body">
+            <div class="d-flex flex-column gap-2">
+              <div>Status: <span class="float-end">${summary.status}</span></div>
+              <div>Causality: <span class="float-end">${summary.causality}</span></div>
+              <div>Seriousness: <span class="float-end">${summary.seriousness}</span></div>
+              <div>Expectedness: <span class="float-end">${summary.expectedness}</span></div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="col-md-6">
-        <h5>Case Classification</h5>
-        <ul class="list-group">
-          <li class="list-group-item">Primary Event: <strong>${summary.primary_event}</strong></li>
-          <li class="list-group-item">MedDRA PT: <strong>${summary.meddra_pt}</strong></li>
-          <li class="list-group-item">Case Completeness: <strong>${summary.case_completeness}</strong></li>
-        </ul>
+
+      <!-- Case Classification -->
+      <div class="col-md-4">
+        <div class="card h-100">
+          <div class="card-header text-bg-primary">Case Classification</div>
+          <div class="card-body">
+            <div class="d-flex flex-column gap-2">
+              <div>Primary Event: <span class="float-end">${summary.primary_event}</span></div>
+              <div>MedDRA PT: <span class="float-end">${summary.meddra_pt}</span></div>
+              <div>Case Completeness: <span class="float-end">${summary.case_completeness}</span></div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="row mt-3">
-      <div class="col-md-6">
-        <h5>Regulatory Impact</h5>
-        <ul class="list-group">
-          <li class="list-group-item">Report Type: <strong>${summary.report_type}</strong></li>
-          <li class="list-group-item">PBRER Inclusion: <strong>${summary.pbrer_inclusion}</strong></li>
-          <li class="list-group-item">Signal Status: <strong>${summary.signal_status}</strong></li>
-        </ul>
+
+      <!-- Regulatory Impact -->
+      <div class="col-md-4">
+        <div class="card h-100">
+          <div class="card-header text-bg-primary">Regulatory Impact</div>
+          <div class="card-body">
+            <div class="d-flex flex-column gap-2">
+              <div>Report Type: <span class="float-end">${summary.report_type}</span></div>
+              <div>PBRER Inclusion: <span class="float-end">${summary.pbrer_inclusion}</span></div>
+              <div>Signal Status: <span class="float-end">${summary.signal_status}</span></div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <!-- Required Actions -->
       <div class="col-md-6">
-        <h5>Required Actions</h5>
-        <ul class="list-group">
-          <li class="list-group-item">Expedited Report: <strong>${summary.expedited_report}</strong></li>
-          <li class="list-group-item">
-            Include in upcoming PBRER/PSUR: <strong>${summary.include_in_pbrer_psur}</strong>
-          </li>
-          <li class="list-group-item">Update Safety Database: <strong>${summary.update_safety_database}</strong></li>
-          <li class="list-group-item">
-            Update Signal Detection Database: <strong>${summary.update_signal_detection_database}</strong>
-          </li>
-        </ul>
+        <div class="card h-100">
+          <div class="card-header text-bg-primary">Required Actions</div>
+          <div class="card-body">
+            <div class="d-flex flex-column gap-2">
+              <div>Expedited Report: <span class="float-end">${summary.expedited_report}</span></div>
+              <div>Include in upcoming PBRER/PSUR: <span class="float-end">${summary.include_in_pbrer_psur}</span></div>
+              <div>Update Safety Database: <span class="float-end">${summary.update_safety_database}</span></div>
+              <div>
+                Update Signal Detection Database:
+                <span class="float-end">${summary.update_signal_detection_database}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="row mt-3">
+
+      <!-- Signal Analysis -->
       <div class="col-md-6">
-        <h5>Signal Analysis</h5>
-        <ul class="list-group">
-          <li class="list-group-item">ROR Score: <strong>${summary.ror_score} (${summary.ror_status})</strong></li>
-          <li class="list-group-item">
-            Cases in Database: <strong>${summary.cases_in_database} similar reports</strong>
-          </li>
-          <li class="list-group-item">Labeling Status: <strong>${summary.labeling_status}</strong></li>
-        </ul>
+        <div class="card h-100">
+          <div class="card-header text-bg-primary">Signal Analysis</div>
+          <div class="card-body">
+            <div class="d-flex flex-column gap-2">
+              <div>ROR Score: <span class="float-end">${summary.ror_score} (${summary.ror_status})</span></div>
+              <div>Cases in Database: <span class="float-end">${summary.cases_in_database} similar reports</span></div>
+              <div>Labeling Status: <span class="float-end">${summary.labeling_status}</span></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

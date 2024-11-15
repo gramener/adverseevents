@@ -12,6 +12,29 @@
     .narrative {
       max-width: 40rem;
     }
+
+    .custom-scrollbar {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+      border: 2px solid transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background-color: rgba(0, 0, 0, 0.5);
+    }
   </style>
 </head>
 
@@ -42,8 +65,8 @@
     <h1 class="display-1 my-4 text-center">Adverse Events</h1>
     <h2 class="display-6 text-center">How can we explainably identify adverse events?</h2>
     <div class="mx-auto my-3 narrative">
-      <p>This application uses LLMs to identify whether user feedback from a clinical trial is an adverse event or not.</p>
-      <p>It uses a workflow with multiple steps, where each step utilizes different models to evaluate the text for potential adverse events. Finally, it summarizes the results in a Pharmacovigilance assessment summary.</p>
+      <p>This application uses a <strong>multi-agent LLM workflow</strong> to identify whether user feedback from a clinical trial is an adverse event or not.</p>
+      <p>The workflow has tasks, each running a different model to evaluate the text for potential adverse events. Finally, it summarizes the results in a Pharmacovigilance assessment summary.</p>
       <p>Here's a breakdown of the workflow:</p>
 
       <ol>
@@ -57,7 +80,21 @@
         <li><strong>Judge Summary</strong>: Finally, the judge summarizes the findings from all analyses, generating a comprehensive report that includes a pharmacovigilance assessment summary in JSON format.</li>
       </ol>
     </div>
-    <pre class="mermaid container-fluid mb-5">
+    <pre class="mermaid container-fluid mb-5 text-center">
+%%{
+  init: {
+    'theme': 'base',
+    'themeVariables': {
+      'primaryColor': '#BB2528',
+      'primaryTextColor': '#fff',
+      'primaryBorderColor': '#7C0000',
+      'lineColor': '#F8B229',
+      'secondaryColor': '#006100',
+      'tertiaryColor': '#fff'
+    }
+  }
+}%%
+
 flowchart LR
   A[Context Analysis] --> C[LLM as a Judge Analysis]
   B[BioClin Analysis] --> C
@@ -87,7 +124,12 @@ flowchart LR
         <section class="eval">
           <div class="mb-3">
             <label for="basic-prompt" class="form-label">Basic Prompt</label>
-            <textarea class="form-control" name="basic-prompt" id="basic-prompt" rows="2">Is there an adverse event in this text?</textarea>
+            <textarea class="form-control" name="basic-prompt" id="basic-prompt" rows="2">Is there an adverse event in this text? Be very concise and talk in points. Err on the side of caution.
+
+End with one of these:
+
+**Conclusion: Adverse event confirmed**
+**Conclusion: Not an adverse event**</textarea>
           </div>
 
           <div class="mb-3">
@@ -100,12 +142,14 @@ flowchart LR
           <div class="mb-3">
             <label for="intermediate-prompt" class="form-label">Intermediate Prompt</label>
             <textarea class="form-control" name="intermediate-prompt" id="intermediate-prompt" rows="5">You are a clinical expert.
-Think step by step.
-Evaluate the reasons for and against whether this text mentions and adverse reaction.
+Think step by step. But be very concise. Respond with ✅ or ❌ against each category you evaluate. Each category should be a new bullet.
+
 End with one of these:
 
 **Conclusion: Adverse event confirmed**
-**Conclusion: Not an adverse event**</textarea>
+**Conclusion: Not an adverse event**
+
+But remember that you should conclude that a health condition is an adverse event only if you are able to clearly establish relationship between drug intake and symptoms / health condition. Err on the side of caution.</textarea>
           </div>
 
           <div class="mb-3">
@@ -117,7 +161,7 @@ End with one of these:
         <section class="eval">
           <div class="mb-3">
             <label for="judge-prompt" class="form-label">LLM Judge Prompt</label>
-            <textarea class="form-control" name="judge-prompt" id="judge-prompt" rows="5">A subject has provided feedback for a clinical trail. Evaluate it on the following parameters:
+            <textarea class="form-control" name="judge-prompt" id="judge-prompt" rows="5">A subject has provided assessment of presence of an adverse event. Evaluate it on the following parameters:
 
 - Temporal Ambiguity and Causality: Determines if there's a clear timeline between drug intake and symptoms. Without a specific temporal link, an adverse event will not be assumed.
 - Language Variability and Colloquialisms: Adjusts for non-medical or varied terms describing symptoms (e.g., "feeling woozy" could imply different conditions). The assistant will only confirm an AE when it can interpret symptoms accurately.
@@ -135,43 +179,45 @@ End with one of these:
 - Reporting Bias: Considers reporting tendencies, recognizing that severe or negative experiences are more likely to be shared online.
 - Technical Challenges: Handles issues with spelling, abbreviations, or context-dependent meanings to avoid inaccuracies.
 
-Then decide whether the feedback is an adverse reaction or not.
+Then decide whether the feedback is an adverse reaction or not. Remember that you should call a medical event an adverse event only if a clear relationship is established between drug intake and medical condition.
 
 Render each step of the reasoning like this:
 
 &lt;details&gt;
-  &lt;summary&gt;Evaluating: Temporal Ambiguity and Causality&lt;/summary&gt;
-  &lt;p&gt;...&lt;/p&gt;
+&lt;summary&gt;Evaluating: Temporal Ambiguity and Causality&lt;/summary&gt;
+&lt;p&gt;...&lt;/p&gt;
 &lt;/details&gt;
 &lt;p&gt;Result: &lt;strong&gt;No temporal link&lt;/strong&gt; between drug intake and symptoms. No adverse event&lt;/p&gt;
 
 &lt;details&gt;
-  &lt;summary&gt;Evaluating: Language Variability and Colloquialisms&lt;/summary&gt;
-  &lt;p&gt;...&lt;/p&gt;
+&lt;summary&gt;Evaluating: Language Variability and Colloquialisms&lt;/summary&gt;
+&lt;p&gt;...&lt;/p&gt;
 &lt;/details&gt;
 &lt;p&gt;Result: &lt;strong&gt;Interpretation of symptoms is accurate&lt;/strong&gt; (feeling woozy could be dizziness). Adverse event confirmed&lt;/p&gt;
 
 End with one of these:
 
 **Conclusion: Adverse event confirmed**
-**Conclusion: Not an adverse event**</textarea>
+**Conclusion: Not an adverse event**
+
+But remember that you should conclude that a health condition is an adverse event only if you are able to clearly establish relationship between drug intake and symptoms / health condition. Avoid false positives as much as you can.</textarea>
           </div>
 
           <div class="mb-3">
             <label for="judge-feedback-prompt" class="form-label">LLM Judge Feedback Prompt</label>
-            <textarea class="form-control" name="judge-feedback-prompt" id="judge-feedback-prompt" rows="2">You evaluated feedback from a clinical trial based on your criteria. Both are below.
-The user is a model that has done the same with simpler criteria. Give feedback to the model. But DO NOT reveal your evaluation criteria.</textarea>
+            <textarea class="form-control" name="judge-feedback-prompt" id="judge-feedback-prompt" rows="2">You evaluated presence of an adverse event based on your criteria. Original Text and your analysis - both are below.
+The user is a model that has done the same with simpler criteria. Give short concise feedback to the model. Don't implicitly or explicitly ask it to change or reconsider the position of their judgement. Also, DO NOT reveal your evaluation criteria.</textarea>
           </div>
 
           <div class="mb-3">
             <label for="revision-prompt" class="form-label">Model Revision Prompt</label>
-            <textarea class="form-control" name="revision-prompt" id="revision-prompt" rows="2">Here is feedback from a clinical expert. Revise your analysis to incorporate the feedback.</textarea>
+            <textarea class="form-control" name="revision-prompt" id="revision-prompt" rows="2">Here is some feedback. Consider this feedback and give one final assessment. Don't feel compelled changing the assessment based on the feedback. Stick to your original analysis if you are confident. In your response, be very short and concise. Talk in points.</textarea>
           </div>
 
           <div class="mb-3">
             <label for="summary-prompt" class="form-label">Summary Prompt</label>
-            <textarea class="form-control" name="summary-prompt" id="summary-prompt" rows="2">A subject has provided feedback for a clinical trail.
-The evaluation from 3 models are below.
+            <textarea class="form-control" name="summary-prompt" id="summary-prompt" rows="2">A subject has provided assessment of presence of adverse event.
+The evaluations from 3 models are below.
 Generate a Pharmacovigilance Assessment Summary as JSON in the provided schema.</textarea>
           </div>
 
@@ -286,11 +332,19 @@ Generate a Pharmacovigilance Assessment Summary as JSON in the provided schema.<
             <label for="judge-model" class="form-label">LLM Judge Model</label>
             <select class="form-select models" name="judge-model" id="judge-model"></select>
           </div>
+
+          <!-- Add a Bootstrap switch to slow down the rendering -->
+          <div class="mb-3 form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="slow-rendering">
+            <label class="form-check-label" for="slow-rendering">Slow down the rendering</label>
+          </div>
         </section>
       </details>
 
-      <button type="submit" class="btn btn-primary">Analyze</button>
-      <button type="reset" class="btn btn-secondary">Reset</button>
+      <div id="analyze" class="d-none">
+        <button type="submit" class="btn btn-primary">Analyze</button>
+        <button type="reset" class="btn btn-secondary">Reset</button>
+      </div>
     </form>
 
     <section id="results" class="container-fluid"></section>
