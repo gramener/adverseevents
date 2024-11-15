@@ -13,6 +13,7 @@ const $form = document.getElementById("adverse-event-form");
 const $analyze = document.getElementById("analyze");
 const $samples = document.getElementById("samples");
 const $clinicalDescription = document.getElementById("clinical-description");
+const $advancedSettings = document.getElementById("advanced-settings");
 const $slowRendering = document.getElementById("slow-rendering");
 const $results = document.getElementById("results");
 
@@ -33,6 +34,8 @@ $analyze.classList.remove("d-none");
 if (!token) {
   const url = "https://llmfoundry.straive.com/login?" + new URLSearchParams({ next: location.href });
   $analyze.innerHTML = /* html */ `<a class="btn btn-primary" href="${url}">Log into LLM Foundry</a>`;
+} else {
+  $advancedSettings.classList.remove("d-none");
 }
 
 // ------------------------------------------------------------------------------------------------
