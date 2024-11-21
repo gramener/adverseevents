@@ -118,7 +118,7 @@ $form.addEventListener("change", (event) => {
 
 const workflow = [
   {
-    title: "Context Analysis",
+    title: "1. Context Analysis",
     card: "basic",
     data: () => ({
       modelNumber: +$form.querySelector("#basic-model").value,
@@ -129,7 +129,7 @@ const workflow = [
     }),
   },
   {
-    title: "BioClin Analysis",
+    title: "2. BioClin Analysis",
     card: "intermediate",
     data: () => ({
       modelNumber: +$form.querySelector("#intermediate-model").value,
@@ -140,7 +140,7 @@ const workflow = [
     }),
   },
   {
-    title: "LLM as a Judge Analysis",
+    title: "3. LLM as a Judge Analysis",
     card: "judge",
     data: () => ({
       modelNumber: +$form.querySelector("#judge-model").value,
@@ -151,7 +151,7 @@ const workflow = [
     }),
   },
   {
-    title: "Judge feedback to Context Analysis",
+    title: "4. Judge feedback to Context Analysis",
     card: "judge",
     data: () => ({
       modelNumber: +$form.querySelector("#judge-model").value,
@@ -162,7 +162,7 @@ const workflow = [
     }),
   },
   {
-    title: "Judge feedback to BioClin Analysis",
+    title: "5. Judge feedback to BioClin Analysis",
     card: "judge",
     data: () => ({
       modelNumber: +$form.querySelector("#judge-model").value,
@@ -173,7 +173,7 @@ const workflow = [
     }),
   },
   {
-    title: "Context Analysis - Revised",
+    title: "6. Context Analysis - Revised",
     card: "basic",
     data: () => ({
       modelNumber: +$form.querySelector("#basic-model").value,
@@ -186,7 +186,7 @@ const workflow = [
     }),
   },
   {
-    title: "BioClin Analysis - Revised",
+    title: "7. BioClin Analysis - Revised",
     card: "intermediate",
     data: () => ({
       modelNumber: +$form.querySelector("#intermediate-model").value,
@@ -199,7 +199,7 @@ const workflow = [
     }),
   },
   {
-    title: "Judge Summary",
+    title: "8. Judge Summary",
     card: "summary",
     data: () => ({
       modelNumber: +$form.querySelector("#judge-model").value,
