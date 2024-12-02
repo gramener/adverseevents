@@ -16,6 +16,7 @@ const $clinicalDescription = document.getElementById("clinical-description");
 const $advancedSettings = document.getElementById("advanced-settings");
 const $slowRendering = document.getElementById("slow-rendering");
 const $results = document.getElementById("results");
+const $screenshot = document.getElementById("screenshot");
 
 const marked = new Marked();
 const results = {};
@@ -157,7 +158,7 @@ const workflow = [
       modelNumber: +$form.querySelector("#judge-model").value,
       messages: [
         { role: "system", content: judgeFeedbackPrompt() },
-        { role: "user", content: results["Context Analysis"] },
+        { role: "user", content: results["1. Context Analysis"] },
       ],
     }),
   },
@@ -168,7 +169,7 @@ const workflow = [
       modelNumber: +$form.querySelector("#judge-model").value,
       messages: [
         { role: "system", content: judgeFeedbackPrompt() },
-        { role: "user", content: results["BioClin Analysis"] },
+        { role: "user", content: results["2. BioClin Analysis"] },
       ],
     }),
   },
@@ -180,8 +181,8 @@ const workflow = [
       messages: [
         { role: "system", content: $form.querySelector("#basic-prompt").value },
         { role: "user", content: $clinicalDescription.value },
-        { role: "assistant", content: results["Context Analysis"] },
-        { role: "user", content: revisionPrompt("Judge feedback to Context Analysis") },
+        { role: "assistant", content: results["1. Context Analysis"] },
+        { role: "user", content: revisionPrompt("5. Judge feedback to Context Analysis") },
       ],
     }),
   },
@@ -193,8 +194,8 @@ const workflow = [
       messages: [
         { role: "system", content: $form.querySelector("#intermediate-prompt").value },
         { role: "user", content: $clinicalDescription.value },
-        { role: "assistant", content: results["BioClin Analysis"] },
-        { role: "user", content: revisionPrompt("Judge feedback to BioClin Analysis") },
+        { role: "assistant", content: results["2. BioClin Analysis"] },
+        { role: "user", content: revisionPrompt("5. Judge feedback to BioClin Analysis") },
       ],
     }),
   },
@@ -213,22 +214,24 @@ const workflow = [
       messages: [
         {
           role: "system",
-          content: `${$form.querySelector("#summary-prompt").value}
-
+          content: $form.querySelector("#summary-prompt").value,
+        },
+        {
+          role: "user",
+          content: `
 # Model 1 Analysis
 
-${results["Context Analysis - Revised"]}
+${results["6. Context Analysis - Revised"]}
 
 # Model 2 Analysis
 
-${results["BioClin Analysis - Revised"]}
+${results["7. BioClin Analysis - Revised"]}
 
 # Model 3 Analysis
 
-${results["LLM as a Judge Analysis"]}
+${results["3. LLM as a Judge Analysis"]}
 `,
         },
-        { role: "user", content: results["LLM as a Judge Analysis"] },
       ],
     }),
   },
@@ -258,6 +261,7 @@ $form.addEventListener("submit", async (event) => {
   event.preventDefault();
   // Clear results
   for (const key in results) delete results[key];
+  $screenshot.classList.add("d-none");
   // Run the workflow
   for (const { title, data } of workflow) {
     const { modelNumber, ...args } = data();

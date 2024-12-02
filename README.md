@@ -35,6 +35,16 @@ flowchart TD
 
 This structured approach ensures a thorough evaluation of the clinical trial description, leveraging multiple models to enhance accuracy and reliability in identifying adverse events.
 
+## Screenshots
+
+Analysis
+
+![Screenshot: Analysis](screenshot-analysis.webp)
+
+Summary
+
+![Screenshot: Summary](screenshot-summary.webp)
+
 ## Features
 
 - Multi-model analysis using various LLMs (OpenAI, Anthropic, Google, Cerebras, Groq)
