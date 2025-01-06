@@ -58,6 +58,7 @@ const models = [
   { source: "groq", model: "llama-3.2-11b-vision-preview", name: "Groq: Llama 3.2 11b ($0)" },
   { source: "groq", model: "gemma2-9b-it", name: "Groq: Gemma 2 9b ($0)" },
   { source: "groq", model: "mixtral-8x7b-32768", name: "Groq: Mixtral 8x7b ($0)" },
+  { source: "custom", model: "bio-mistral", name: "BioMistral-7B ($0)" } // New model added
 ];
 
 // Apply the models to the form
@@ -89,6 +90,10 @@ const sources = {
     adapter: openai,
     url: () => "https://llmfoundry.straive.com/groq/v1/chat/completions",
   },
+  custom: {
+    adapter: openai,  // Assuming the local model uses OpenAI's format for requests
+    url: () => "http://<server-ip>:<port>/generate" // API endpoint for local model
+  }
 };
 
 // ------------------------------------------------------------------------------------------------
@@ -182,7 +187,7 @@ const workflow = [
         { role: "system", content: $form.querySelector("#basic-prompt").value },
         { role: "user", content: $clinicalDescription.value },
         { role: "assistant", content: results["1. Context Analysis"] },
-        { role: "user", content: revisionPrompt("5. Judge feedback to Context Analysis") },
+        { role: "user", content: revisionPrompt("4. Judge feedback to Context Analysis") },
       ],
     }),
   },
@@ -269,7 +274,16 @@ $form.addEventListener("submit", async (event) => {
     const { adapter, url } = sources[source];
     const headers = { "Content-Type": "application/json" };
     const body = adapter({ model, ...args, stream: true });
-    const params = { method: "POST", credentials: "include", headers, body: JSON.stringify(body) };
+    // const params = { method: "POST", credentials: "include", headers, body: JSON.stringify(body)};
+    let params = {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body)
+      };
+
+      if (source !== "custom") {
+          params.credentials = "include";
+      }
     draw(results, { loading: true });
     for await (const { error, content } of asyncLLM(url(model), params)) {
       if (error) results[title] = `ERROR: ${error}`;
