@@ -4,7 +4,7 @@ import { html, render } from "https://cdn.jsdelivr.net/npm/lit-html@3/+esm";
 import { unsafeHTML } from "https://cdn.jsdelivr.net/npm/lit-html@3/directives/unsafe-html.js";
 import { parse } from "https://cdn.jsdelivr.net/npm/partial-json@0.1.7/+esm";
 import { Marked } from "https://cdn.jsdelivr.net/npm/marked@13/+esm";
-import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/+esm";
 import { asyncLLM } from "https://cdn.jsdelivr.net/npm/asyncllm@2";
 import { anthropic } from "https://cdn.jsdelivr.net/npm/asyncllm@2/dist/anthropic.js";
 import { gemini } from "https://cdn.jsdelivr.net/npm/asyncllm@2/dist/gemini.js";
@@ -43,6 +43,7 @@ if (!token) {
 // Model configuration. These are the models that are available to use.
 const models = [
   { source: "openai", model: "gpt-4o-mini", name: "OpenAI: GPT 4o Mini ($0.15)" },
+  { source: "openai", model: "gpt-4o-mini", name: "BioClin LLM ($0.40)" },
   { source: "openai", model: "gpt-4o-audio-preview", name: "OpenAI: GPT 4o Audio Preview ($2.5)" },
   { source: "openai", model: "gpt-4o", name: "OpenAI: GPT 4o ($2.5)" },
   { source: "openai", model: "chatgpt-4o-latest", name: "OpenAI: ChatGPT 4o ($5)" },
@@ -426,3 +427,9 @@ const drawSummary = (summary) => html`
     </div>
   </div>
 `;
+
+// ------------------------------------------------------------------------------------------------
+// Initialize the form
+const params = new URLSearchParams(location.search);
+const q = params.get("q");
+if (q) $clinicalDescription.value = q;

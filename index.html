@@ -118,30 +118,40 @@ flowchart LR
         <textarea class="form-control" name="clinical-description" id="clinical-description" rows="5" placeholder="Enter the clinical trial description here..." required></textarea>
       </div>
 
+      <div class="row">
+        <div class="col-md mb-3">
+          <label for="basic-model" class="form-label">Basic Model</label>
+          <select class="form-select models" name="basic-model" id="basic-model"></select>
+        </div>
+        <div class="col-md mb-3">
+          <label for="intermediate-model" class="form-label">Intermediate Model</label>
+          <select class="form-select models" name="intermediate-model" id="intermediate-model"></select>
+        </div>
+        <div class="col-md mb-3">
+          <label for="judge-model" class="form-label">LLM Judge Model</label>
+          <select class="form-select models" name="judge-model" id="judge-model"></select>
+        </div>
+      </div>
+      <div class="mb-3 form-check form-switch">
+        <input class="form-check-input" type="checkbox" role="switch" id="slow-rendering">
+        <label class="form-check-label" for="slow-rendering">Slow down the rendering</label>
+      </div>
+
       <details class="mb-3 d-none" id="advanced-settings">
-        <summary class="h5 mb-3">Advanced Settings</summary>
+        <summary class="mb-3">Prompt Settings</summary>
+        <div class="mb-3">
+          <label for="basic-prompt" class="form-label">Basic Prompt</label>
+          <textarea class="form-control" name="basic-prompt" id="basic-prompt" rows="2">Is there an adverse event in this text? Be very concise and talk in points. Err on the side of caution.
 
-        <section class="eval">
-          <div class="mb-3">
-            <label for="basic-prompt" class="form-label">Basic Prompt</label>
-            <textarea class="form-control" name="basic-prompt" id="basic-prompt" rows="2">Is there an adverse event in this text? Be very concise and talk in points. Err on the side of caution.
+          End with one of these:
 
-End with one of these:
+          **Conclusion: Adverse event confirmed**
+          **Conclusion: Not an adverse event**</textarea>
+        </div>
 
-**Conclusion: Adverse event confirmed**
-**Conclusion: Not an adverse event**</textarea>
-          </div>
-
-          <div class="mb-3">
-            <label for="basic-model" class="form-label">Basic Model</label>
-            <select class="form-select models" name="basic-model" id="basic-model"></select>
-          </div>
-        </section>
-
-        <section class="eval">
-          <div class="mb-3">
-            <label for="intermediate-prompt" class="form-label">Intermediate Prompt</label>
-            <textarea class="form-control" name="intermediate-prompt" id="intermediate-prompt" rows="5">You are a clinical expert.
+        <div class="mb-3">
+          <label for="intermediate-prompt" class="form-label">Intermediate Prompt</label>
+          <textarea class="form-control" name="intermediate-prompt" id="intermediate-prompt" rows="5">You are a clinical expert.
 Think step by step. But be very concise. Respond with ✅ or ❌ against each category you evaluate. Each category should be a new bullet.
 
 End with one of these:
@@ -150,18 +160,11 @@ End with one of these:
 **Conclusion: Not an adverse event**
 
 But remember that you should conclude that a health condition is an adverse event only if you are able to clearly establish relationship between drug intake and symptoms / health condition. Err on the side of caution.</textarea>
-          </div>
+        </div>
 
-          <div class="mb-3">
-            <label for="intermediate-model" class="form-label">Intermediate Model</label>
-            <select class="form-select models" name="intermediate-model" id="intermediate-model"></select>
-          </div>
-        </section>
-
-        <section class="eval">
-          <div class="mb-3">
-            <label for="judge-prompt" class="form-label">LLM Judge Prompt</label>
-            <textarea class="form-control" name="judge-prompt" id="judge-prompt" rows="5">A subject has provided assessment of presence of an adverse event. Evaluate it on the following parameters:
+        <div class="mb-3">
+          <label for="judge-prompt" class="form-label">LLM Judge Prompt</label>
+          <textarea class="form-control" name="judge-prompt" id="judge-prompt" rows="5">A subject has provided assessment of presence of an adverse event. Evaluate it on the following parameters:
 
 - Temporal Ambiguity and Causality: Determines if there's a clear timeline between drug intake and symptoms. Without a specific temporal link, an adverse event will not be assumed.
 - Language Variability and Colloquialisms: Adjusts for non-medical or varied terms describing symptoms (e.g., "feeling woozy" could imply different conditions). The assistant will only confirm an AE when it can interpret symptoms accurately.
@@ -201,29 +204,29 @@ End with one of these:
 **Conclusion: Not an adverse event**
 
 But remember that you should conclude that a health condition is an adverse event only if you are able to clearly establish relationship between drug intake and symptoms / health condition. Avoid false positives as much as you can.</textarea>
-          </div>
+        </div>
 
-          <div class="mb-3">
-            <label for="judge-feedback-prompt" class="form-label">LLM Judge Feedback Prompt</label>
-            <textarea class="form-control" name="judge-feedback-prompt" id="judge-feedback-prompt" rows="2">You evaluated presence of an adverse event based on your criteria. Original Text and your analysis - both are below.
+        <div class="mb-3">
+          <label for="judge-feedback-prompt" class="form-label">LLM Judge Feedback Prompt</label>
+          <textarea class="form-control" name="judge-feedback-prompt" id="judge-feedback-prompt" rows="2">You evaluated presence of an adverse event based on your criteria. Original Text and your analysis - both are below.
 The user is a model that has done the same with simpler criteria. Give short concise feedback to the model. Don't implicitly or explicitly ask it to change or reconsider the position of their judgement. Also, DO NOT reveal your evaluation criteria.</textarea>
-          </div>
+        </div>
 
-          <div class="mb-3">
-            <label for="revision-prompt" class="form-label">Model Revision Prompt</label>
-            <textarea class="form-control" name="revision-prompt" id="revision-prompt" rows="2">Here is some feedback. Consider this feedback and give one final assessment. Don't feel compelled changing the assessment based on the feedback. Stick to your original analysis if you are confident. In your response, be very short and concise. Talk in points.</textarea>
-          </div>
+        <div class="mb-3">
+          <label for="revision-prompt" class="form-label">Model Revision Prompt</label>
+          <textarea class="form-control" name="revision-prompt" id="revision-prompt" rows="2">Here is some feedback. Consider this feedback and give one final assessment. Don't feel compelled changing the assessment based on the feedback. Stick to your original analysis if you are confident. In your response, be very short and concise. Talk in points.</textarea>
+        </div>
 
-          <div class="mb-3">
-            <label for="summary-prompt" class="form-label">Summary Prompt</label>
-            <textarea class="form-control" name="summary-prompt" id="summary-prompt" rows="2">A subject has provided assessment of presence of adverse event.
+        <div class="mb-3">
+          <label for="summary-prompt" class="form-label">Summary Prompt</label>
+          <textarea class="form-control" name="summary-prompt" id="summary-prompt" rows="2">A subject has provided assessment of presence of adverse event.
 The evaluations from 3 models are below.
 Generate a Pharmacovigilance Assessment Summary as JSON in the provided schema.</textarea>
-          </div>
+        </div>
 
-          <div class="mb-3">
-            <label for="summary-schema" class="form-label">Summary Schema</label>
-            <textarea class="form-control font-monospace" name="summary-schema" id="summary-schema" rows="5">{
+        <div class="mb-3">
+          <label for="summary-schema" class="form-label">Summary Schema</label>
+          <textarea class="form-control font-monospace" name="summary-schema" id="summary-schema" rows="5">{
   "type": "object",
   "properties": {
     "status": {
@@ -326,19 +329,8 @@ Generate a Pharmacovigilance Assessment Summary as JSON in the provided schema.<
   "additionalProperties": false
 }
 </textarea>
-          </div>
+        </div>
 
-          <div class="mb-3">
-            <label for="judge-model" class="form-label">LLM Judge Model</label>
-            <select class="form-select models" name="judge-model" id="judge-model"></select>
-          </div>
-
-          <!-- Add a Bootstrap switch to slow down the rendering -->
-          <div class="mb-3 form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="slow-rendering">
-            <label class="form-check-label" for="slow-rendering">Slow down the rendering</label>
-          </div>
-        </section>
       </details>
 
       <div id="analyze" class="d-none">
