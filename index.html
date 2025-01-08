@@ -118,27 +118,30 @@ flowchart LR
         <textarea class="form-control" name="clinical-description" id="clinical-description" rows="5" placeholder="Enter the clinical trial description here..." required></textarea>
       </div>
 
-      <div class="row">
-        <div class="col-md mb-3">
-          <label for="basic-model" class="form-label">Basic Model</label>
-          <select class="form-select models" name="basic-model" id="basic-model"></select>
+      <details id="model-settings">
+        <summary class="mb-3">Model Settings</summary>
+        <div class="row">
+          <div class="col-md mb-3">
+            <label for="basic-model" class="form-label">Basic Model</label>
+            <select class="form-select models" name="basic-model" id="basic-model"></select>
+          </div>
+          <div class="col-md mb-3">
+            <label for="intermediate-model" class="form-label">Intermediate Model</label>
+            <select class="form-select models" name="intermediate-model" id="intermediate-model"></select>
+          </div>
+          <div class="col-md mb-3">
+            <label for="judge-model" class="form-label">LLM Judge Model</label>
+            <select class="form-select models" name="judge-model" id="judge-model"></select>
+          </div>
         </div>
-        <div class="col-md mb-3">
-          <label for="intermediate-model" class="form-label">Intermediate Model</label>
-          <select class="form-select models" name="intermediate-model" id="intermediate-model"></select>
+        <div class="mb-3 form-check form-switch">
+          <input class="form-check-input" type="checkbox" role="switch" id="slow-rendering">
+          <label class="form-check-label" for="slow-rendering">Slow down the rendering</label>
         </div>
-        <div class="col-md mb-3">
-          <label for="judge-model" class="form-label">LLM Judge Model</label>
-          <select class="form-select models" name="judge-model" id="judge-model"></select>
-        </div>
-      </div>
-      <div class="mb-3 form-check form-switch">
-        <input class="form-check-input" type="checkbox" role="switch" id="slow-rendering">
-        <label class="form-check-label" for="slow-rendering">Slow down the rendering</label>
-      </div>
+      </details>
 
-      <details class="mb-3 d-none" id="advanced-settings">
-        <summary class="mb-3">Prompt Settings</summary>
+      <details id="advanced-settings">
+        <summary class="mb-3">Advanced Settings</summary>
         <div class="mb-3">
           <label for="basic-prompt" class="form-label">Basic Prompt</label>
           <textarea class="form-control" name="basic-prompt" id="basic-prompt" rows="2">Is there an adverse event in this text? Be very concise and talk in points. Err on the side of caution.

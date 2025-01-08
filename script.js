@@ -35,15 +35,13 @@ $analyze.classList.remove("d-none");
 if (!token) {
   const url = "https://llmfoundry.straive.com/login?" + new URLSearchParams({ next: location.href });
   $analyze.innerHTML = /* html */ `<a class="btn btn-primary" href="${url}">Log into LLM Foundry</a>`;
-} else {
-  $advancedSettings.classList.remove("d-none");
 }
 
 // ------------------------------------------------------------------------------------------------
 // Model configuration. These are the models that are available to use.
 const models = [
   { source: "openai", model: "gpt-4o-mini", name: "OpenAI: GPT 4o Mini ($0.15)" },
-  { source: "openai", model: "gpt-4o-mini", name: "BioClin LLM ($0.40)" },
+  { source: "gemini", model: "gemini-exp-1206", name: "BioClin LLM ($0)" },
   { source: "openai", model: "gpt-4o-audio-preview", name: "OpenAI: GPT 4o Audio Preview ($2.5)" },
   { source: "openai", model: "gpt-4o", name: "OpenAI: GPT 4o ($2.5)" },
   { source: "openai", model: "chatgpt-4o-latest", name: "OpenAI: ChatGPT 4o ($5)" },
@@ -52,7 +50,10 @@ const models = [
   { source: "anthropic", model: "claude-3-5-sonnet-20241022", name: "Anthropic: Claude 3.5 Sonnet v2 ($3)" },
   { source: "gemini", model: "gemini-1.5-flash-8b", name: "Google: Gemini 1.5 Flash 8b ($0.04)" },
   { source: "gemini", model: "gemini-1.5-flash-002", name: "Google: Gemini 1.5 Flash 002 ($0.075)" },
+  { source: "gemini", model: "gemini-2.0-flash-exp", name: "Google: Gemini 2.0 Flash ($0)" },
   { source: "gemini", model: "gemini-1.5-pro-002", name: "Google: Gemini 1.5 Pro 002 ($1.25)" },
+  { source: "gemini", model: "gemini-2.0-flash-thinking-exp-1219", name: "Google: Gemini 2.0 Flash Thinking Exp ($0)" },
+  { source: "gemini", model: "gemini-exp-1206", name: "Google: Gemini Experimental 1206 ($0)" },
   { source: "cerebras", model: "llama3.1-70b", name: "Cerebras: Llama 3.1 70b ($0)" },
   { source: "cerebras", model: "llama3.1-8b", name: "Cerebras: Llama 3.1 8b ($0)" },
   { source: "groq", model: "llama-3.2-90b-vision-preview", name: "Groq: Llama 3.2 90b ($0)" },
