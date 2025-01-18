@@ -341,9 +341,6 @@ const draw = (results, { loading } = { loading: false }) => {
     </div>
   `;
   render(contents, $results);
-  // Ensure that all 3 columns have scrolled to the bottom
-  for (const $col of $results.querySelectorAll(".col .overflow-auto")) $col.scrollTop = $col.scrollHeight;
-  $results.scrollIntoView({ behavior: "smooth", block: "end" });
 };
 
 const drawSummary = (summary) => html`
